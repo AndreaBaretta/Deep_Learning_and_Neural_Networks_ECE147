@@ -40,8 +40,10 @@ class Softmax(object):
     #   set margins, and then normalize the loss by the number of 
     #   training examples.)
     # ================================================================ #
-    pass
-    
+    assert(X.shape[1] == W.shape[1])
+    for i, x in enumerate(X)
+        for j in range(0, X.shape[])
+            error = np.exp(W[])
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #

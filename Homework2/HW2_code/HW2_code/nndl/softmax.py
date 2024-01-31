@@ -32,7 +32,8 @@ class Softmax(object):
 
     # Initialize the loss to zero.
     loss = 0.0
-
+    
+    unit_loss = np.zeros(X.shape[0])
     # ================================================================ #
     # YOUR CODE HERE:
     #   Calculate the normalized softmax loss.  Store it as the variable loss.
@@ -40,14 +41,22 @@ class Softmax(object):
     #   set margins, and then normalize the loss by the number of 
     #   training examples.)
     # ================================================================ #
-    assert(X.shape[1] == W.shape[1])
-    for i, x in enumerate(X)
-        for j in range(0, X.shape[])
-            error = np.exp(W[])
+    assert X.shape[1] == self.W.shape[1], f"{X.shape[1] =} != {self.W.shape[1] =}"
+    def softmax(c, x):
+        return np.exp(self.W[c]@x)/(np.exp(self.W@x)).sum()
+    
+#     i = 0
+    for y_i, x_i in zip(y, X):
+        loss -= np.log(softmax(y_i, x_i))
+#         unit_loss[i] = -np.log(softmax(y_i, x_i))
+#         i += 1
+
+    loss /= X.shape[0]
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #
 
+#     return loss, unit_loss
     return loss
 
   def loss_and_grad(self, X, y):
@@ -67,7 +76,23 @@ class Softmax(object):
     #   Calculate the softmax loss and the gradient. Store the gradient
     #   as the variable grad.
     # ================================================================ #
-    pass
+    assert X.shape[1] == self.W.shape[1], f"{X.shape[1] =} != {self.W.shape[1] =}"
+    def softmax(c, x):
+        return np.exp(self.W[c]@x)/(np.exp(self.W@x)).sum()
+
+    for y_i, x_i in zip(y, X):
+        loss -= np.log(softmax(y_i, x_i))
+
+    loss /= X.shape[0]
+    
+    
+    for i in range(0, X.shape[0]):
+        for k in range(0, self.W.shape[0]):
+            dL_i_dw_k = (softmax(k, X[i]) - (k == y[i]))*X[i]
+            assert grad[k,:].shape == dL_i_dw_k.shape, f"{grad[k,:].shape =} != {dL_i_dw_k.shape =}"
+            grad[k,:] += dL_i_dw_k
+    
+    grad /= X.shape[0]
     
     # ================================================================ #
     # END YOUR CODE HERE
@@ -108,7 +133,14 @@ class Softmax(object):
     # YOUR CODE HERE:
     #   Calculate the softmax loss and gradient WITHOUT any for loops.
     # ================================================================ #
-    pass
+    
+    assert X.shape[1] == self.W.shape[1], f"{X.shape[1] =} != {self.W.shape[1] =}"
+    loss = (-np.log((np.exp((self.W[y]*X).sum(axis=1))/(np.exp(X@self.W.T).sum(axis=1))))).mean()
+    
+    
+    softmax_mat = ((np.exp(X@self.W.T))/(np.exp(X@self.W.T).sum(axis=1)[:,np.newaxis]))
+    indicator_func = 1*(y[:,np.newaxis] == np.arange(10))
+    grad = (1.0/X.shape[0])*(softmax_mat - indicator_func).T@X
     
     # ================================================================ #
     # END YOUR CODE HERE

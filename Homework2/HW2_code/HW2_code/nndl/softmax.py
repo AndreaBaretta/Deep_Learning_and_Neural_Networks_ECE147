@@ -175,40 +175,42 @@ class Softmax(object):
     loss_history = []
 
     for it in np.arange(num_iters):
-      X_batch = None
-      y_batch = None
+        X_batch = None
+        y_batch = None
 
-      # ================================================================ #
-      # YOUR CODE HERE:
-      #   Sample batch_size elements from the training data for use in 
-      #     gradient descent.  After sampling,
-      #     - X_batch should have shape: (batch_size, dim)
-      #     - y_batch should have shape: (batch_size,)
-      #   The indices should be randomly generated to reduce correlations
-      #   in the dataset.  Use np.random.choice.  It's okay to sample with
-      #   replacement.
-      # ================================================================ #
-      pass
-      # ================================================================ #
-      # END YOUR CODE HERE
-      # ================================================================ #
+        # ================================================================ #
+        # YOUR CODE HERE:
+        #   Sample batch_size elements from the training data for use in 
+        #     gradient descent.  After sampling,
+        #     - X_batch should have shape: (batch_size, dim)
+        #     - y_batch should have shape: (batch_size,)
+        #   The indices should be randomly generated to reduce correlations
+        #   in the dataset.  Use np.random.choice.  It's okay to sample with
+        #   replacement.
+        # ================================================================ #
+        idxs = np.random.choice(np.arange(num_train), size=batch_size, replace=False)
+        X_batch = X[idxs]
+        y_batch = y[idxs]
+        # ================================================================ #
+        # END YOUR CODE HERE
+        # ================================================================ #
 
-      # evaluate loss and gradient
-      loss, grad = self.fast_loss_and_grad(X_batch, y_batch)
-      loss_history.append(loss)
+        # evaluate loss and gradient
+        loss, grad = self.fast_loss_and_grad(X_batch, y_batch)
+        loss_history.append(loss)
 
-      # ================================================================ #
-      # YOUR CODE HERE:
-      #   Update the parameters, self.W, with a gradient step 
-      # ================================================================ #
-      pass
+        # ================================================================ #
+        # YOUR CODE HERE:
+        #   Update the parameters, self.W, with a gradient step 
+        # ================================================================ #
+        self.W -= learning_rate*grad
 
-      # ================================================================ #
-      # END YOUR CODE HERE
-      # ================================================================ #
+        # ================================================================ #
+        # END YOUR CODE HERE
+        # ================================================================ #
 
-      if verbose and it % 100 == 0:
-        print('iteration {} / {}: loss {}'.format(it, num_iters, loss))
+        if verbose and it % 100 == 0:
+            print('iteration {} / {}: loss {}'.format(it, num_iters, loss))
 
     return loss_history
 
@@ -227,7 +229,7 @@ class Softmax(object):
     # YOUR CODE HERE:
     #   Predict the labels given the training data.
     # ================================================================ #
-    pass
+    y_pred = np.argmax(X@self.W.T, axis=1)
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #

@@ -101,14 +101,14 @@ class TwoLayerNet(object):
     # YOUR CODE HERE:
     #   Calculate the loss of the neural network.  This includes the
     #   softmax loss and the L2 regularization for W1 and W2. Store the
-    #   total loss in teh variable loss.  Multiply the regularization
+    #   total loss in the variable loss.  Multiply the regularization
     #   loss by 0.5 (in addition to the factor reg).
     # ================================================================ #
 
     # scores is num_examples by num_classes
 
     loss = np.log(np.exp(z2.T).sum(axis=1)).mean() - z2.T[np.arange(len(z2.T)), y].mean() + \
-            0.05*0.5*(np.linalg.norm(W1, ord='fro')**2 + np.linalg.norm(W2, ord='fro')**2)
+            reg*0.5*(np.linalg.norm(W1, ord='fro')**2 + np.linalg.norm(W2, ord='fro')**2)
   
     # ================================================================ #
     # END YOUR CODE HERE
@@ -124,7 +124,30 @@ class TwoLayerNet(object):
     #   W1, and be of the same size as W1.
     # ================================================================ #
 
-    pass
+    a = np.zeros_like(z2.T)
+    a[np.arange(len(z2.T)), y]=1
+    dL_dz2 = (np.exp(z2.T)/np.exp(z2.T).sum(axis=1)[:,np.newaxis] - a).T
+    dL_db2 = dL_dz2.sum(axis=1)
+    dL_dv2 = dL_dz2
+    dL_dW2 = dL_dv2@h1.T
+    dL_dh1 = W2.T@dL_dv2
+    dL_dz1 = (h1 > 0)*dL_dh1
+    dL_db1 = dL_dz1.sum(axis=1)
+    dL_dv1 = dL_dz1
+    dL_dW1 = dL_dv1@X
+
+    dL_db2 /= N
+    dL_dW2 /= N
+    dL_db1 /= N
+    dL_dW1 /= N
+    
+    dL_dW2 += reg * W2
+    dL_dW1 += reg * W1
+    
+    grads["b2"] = dL_db2
+    grads["W2"] = dL_dW2
+    grads["b1"] = dL_db1
+    grads["W1"] = dL_dW1
 
     # ================================================================ #
     # END YOUR CODE HERE

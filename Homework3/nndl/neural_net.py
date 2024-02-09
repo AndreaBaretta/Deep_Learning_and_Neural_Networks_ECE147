@@ -80,11 +80,10 @@ class TwoLayerNet(object):
     #   use a for loop in your implementation.
     # ================================================================ #
     
-    z1 = W1@X.T + b1 # (H x D) x (D x N) = (H x N)
-    h1 = (z1 > 0)*z1 # ReLU
-    z2 = W2@h1 + b2  # (C x H) x (H x N)
-    
-    scores = 
+    z1 = W1@(X.T) + b1[:,np.newaxis] # (H x D) x (D x N) = (H x N)
+    h1 = (z1 >= 0)*z1 # ReLU
+    z2 = W2@h1 + b2[:,np.newaxis]  # (C x H) x (H x N) = (C x N)
+    scores = z2.T
     
     # ================================================================ #
     # END YOUR CODE HERE
@@ -108,7 +107,8 @@ class TwoLayerNet(object):
 
     # scores is num_examples by num_classes
 
-    pass
+    loss = np.log(np.exp(z2.T).sum(axis=1)).mean() - z2.T[np.arange(len(z2.T)), y].mean() + \
+            0.05*0.5*(np.linalg.norm(W1, ord='fro')**2 + np.linalg.norm(W2, ord='fro')**2)
   
     # ================================================================ #
     # END YOUR CODE HERE

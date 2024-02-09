@@ -79,8 +79,12 @@ class TwoLayerNet(object):
     #   The output of the second FC layer is the output scores. Do not
     #   use a for loop in your implementation.
     # ================================================================ #
-
-    pass
+    
+    z1 = W1@X.T + b1 # (H x D) x (D x N) = (H x N)
+    h1 = (z1 > 0)*z1 # ReLU
+    z2 = W2@h1 + b2  # (C x H) x (H x N)
+    
+    scores = 
     
     # ================================================================ #
     # END YOUR CODE HERE

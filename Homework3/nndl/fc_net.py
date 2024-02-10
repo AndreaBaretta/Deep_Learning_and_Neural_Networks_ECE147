@@ -48,10 +48,11 @@ class TwoLayerNet(object):
     # ================================================================ #
 
     self.params['W1'] = weight_scale * np.random.randn(hidden_dims, input_dim)
+#     print(f"{self.params['W1'].shape=}")
     self.params['b1'] = np.zeros(hidden_dims)
     self.params['W2'] = weight_scale * np.random.randn(num_classes, hidden_dims)
     self.params['b2'] = np.zeros(num_classes)
-    self.params['dropout'] = dropout
+#     self.params['dropout'] = dropout
 
     # ================================================================ #
     # END YOUR CODE HERE
@@ -87,11 +88,12 @@ class TwoLayerNet(object):
     W1, b1 = self.params['W1'], self.params['b1']
     W2, b2 = self.params['W2'], self.params['b2']
     reg = self.reg
-    
+#     print(f" +++++++++++++++++++++ Things are happening ++++++++++++++++++++++")
+#     print(f"{X.shape=}")
+#     print(f"{W1.shape=}")
     h1, cache_h1 = affine_relu_forward(X, W1, b1)
     z2, cache_z2 = affine_forward(h1, W2, b2)
     scores = z2
-#     print(f"{scores=}")
     
     # ================================================================ #
     # END YOUR CODE HERE
@@ -120,12 +122,9 @@ class TwoLayerNet(object):
     loss, dL = softmax_loss(scores, y)
     dh1, dw2, db2 = affine_backward(dL, cache_z2)
     dx, dw1, db1 = affine_relu_backward(dh1, cache_h1)
-#     print(f"{loss=}")
     
     reg_loss = reg*0.5*(np.linalg.norm(W1, ord='fro')**2 + np.linalg.norm(W2, ord='fro')**2)
-#     print(f"{reg_loss=}")
     loss += reg_loss
-#     print(f"{loss=}")
     dw1 += reg*W1
     dw2 += reg*W2
     

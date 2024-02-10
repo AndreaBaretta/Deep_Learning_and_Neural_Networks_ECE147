@@ -31,6 +31,8 @@ def affine_forward(x, w, b):
     # ================================================================ #
         
     X = np.reshape(x, (len(x),-1))
+#     print(f"{X.shape=}")
+#     print(f"{w.shape=}")
     out = w.T@X.T + b[:,np.newaxis]
     out = out.T
 

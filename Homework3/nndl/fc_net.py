@@ -278,21 +278,24 @@ class FullyConnectedNet(object):
     cache = []
     state = np.reshape(X, (len(X),-1))
     for i in range(1, self.num_layers):
+        
+        # Assuming state: (N x D)
         state, cache_ = affine_forward(state, self.params[f'W{i}'], self.params[f'b{i}'])
         cache.append(cache_)
         
+        # Assuming state: (N x M)
         if self.use_batchnorm:
-            mu = state.mean(axis=1)[:,np.newaxis]
-            var = state.var(axis=1)[:,np.newaxis]
+            mu = state.mean(axis=0)[:,np.newaxis]
+            var = state.var(axis=0)[:,np.newaxis]
             x_hat = (state - mu)/np.sqrt(var+e)
+            cache.append((mu, var, x_hat, state))
             state = self.params[f'gamma_{i}']*x_hat + self.params[f'beta_{i}']
-            cache.append((mu, var))
         
         state, cache_ = relu_forward(state)
         cache.append(cache_)
         
         if self.use_dropout:
-            if mode == 'test'
+            if mode == 'test':
                 state *= (1-self.dropout_param['p'])
             else:
                 M = np.random.rand((state.shape[1])) < self.dropout_param['p']
@@ -321,10 +324,35 @@ class FullyConnectedNet(object):
     # ================================================================ #
 
     loss, dL = softmax_loss(scores, y)
-    dL, dw, db = affine_backward(dL, cache_z2)
+    dL, dw, db = affine_backward(dL, cache.pop())
     grads[f'W{L}'] = dw
     grads[f'b{L}'] = db
-    for i in range(self.num_layers-1, 0)
+    
+    for i in range(self.num_layers-1, 0, -1):
+        if self.use_dropout:
+            if mode == 'test':
+                dL *= (1-self.dropout_param['p'])
+            else:
+                M = cache.pop()
+                dL *= M
+
+        dL = relu_backward(dL, cache.pop())
+        
+        # Assuming dL: (N x D) - Each row is a feature, each column an observation. Sum along observations
+        if self.use_batchnorm:
+            mu, var, x_hat, x = cache.pop()
+            dbeta = dL.sum(axis=0)
+            dgamma = (dL*x_hat).sum(x=0)
+            dx_hat = dL*self.params[f'gamma_{i}']
+            dmu = (-1/(var+e))*dx_hat.sum(axis=0)
+            dvar = (-0.5/((var+e)**(3.0/2.0))) * ((x - mu)*dx_hat).sum(axis=0)
+            dL = 1/((var+e)**(1.0/2.0))*dx_hat + 2*((x - mu)/len(m))*dvar + (1.0/len(x))*dmu
+            grads[f'beta_{i}'] = dbeta
+            grads[f'gamma_{i}'] = dgamma
+        
+        dL, dw, db = affine_backward(dL, cache.pop())
+        grads[f'W{i}'] = dw
+        grads[f'b{i}'] = db
 
     # ================================================================ #
     # END YOUR CODE HERE

@@ -202,7 +202,6 @@ class FullyConnectedNet(object):
     L = len(hidden_dims)+1
     self.params[f'W{L}'] = weight_scale * np.random.randn(num_classes, hidden_dims[len(hidden_dims)-1])
     self.params[f'b{L}'] = np.zeros(num_classes)
-    
 
     # ================================================================ #
     # END YOUR CODE HERE
@@ -277,12 +276,13 @@ class FullyConnectedNet(object):
     reg = self.reg
     cache = []
     state = np.reshape(X, (len(X),-1))
+    N = len(X)
     for i in range(1, self.num_layers):
-        
+        assert len(state) == N
         # Assuming state: (N x D)
-        state, cache_ = affine_forward(state, self.params[f'W{i}'], self.params[f'b{i}'])
+        state, cache_ = affine_forward(state, self.params[f'W{i}'].T, self.params[f'b{i}'])
         cache.append(cache_)
-        
+        assert len(state) == N
         # Assuming state: (N x M)
         if self.use_batchnorm:
             mu = state.mean(axis=0)[:,np.newaxis]
@@ -290,10 +290,12 @@ class FullyConnectedNet(object):
             x_hat = (state - mu)/np.sqrt(var+e)
             cache.append((mu, var, x_hat, state))
             state = self.params[f'gamma_{i}']*x_hat + self.params[f'beta_{i}']
+            assert len(state) == N
         
         state, cache_ = relu_forward(state)
         cache.append(cache_)
-        
+        assert len(state) == N
+
         if self.use_dropout:
             if mode == 'test':
                 state *= (1-self.dropout_param['p'])
@@ -301,9 +303,11 @@ class FullyConnectedNet(object):
                 M = np.random.rand((state.shape[1])) < self.dropout_param['p']
                 state *= M
                 cache.append(M)
+            assert len(state) == N
+
     
     L = self.num_layers
-    state, cache_ = affine_forward(state, self.params[f'W{L}'], self.params[f'b{L}'])
+    state, cache_ = affine_forward(state, self.params[f'W{L}'].T, self.params[f'b{L}'])
     cache.append(cache_)
     scores = state
 
@@ -325,8 +329,11 @@ class FullyConnectedNet(object):
 
     loss, dL = softmax_loss(scores, y)
     dL, dw, db = affine_backward(dL, cache.pop())
-    grads[f'W{L}'] = dw
+    grads[f'W{L}'] = dw.T + reg*self.params[f'W{L}']
     grads[f'b{L}'] = db
+    assert grads[f'W{L}'].shape == self.params[f'W{L}'].shape, f"{grads[f'W{L}'].shape=} | {self.params[f'W{L}'].shape=}"
+    assert grads[f'b{L}'].shape == self.params[f'b{L}'].shape, f"{grads[f'b{L}'].shape=} | {self.params[f'b{L}'].shape=}"
+    reg_loss = reg*0.5*(np.linalg.norm(self.params[f'W{L}'], ord='fro')**2)
     
     for i in range(self.num_layers-1, 0, -1):
         if self.use_dropout:
@@ -349,11 +356,20 @@ class FullyConnectedNet(object):
             dL = 1/((var+e)**(1.0/2.0))*dx_hat + 2*((x - mu)/len(m))*dvar + (1.0/len(x))*dmu
             grads[f'beta_{i}'] = dbeta
             grads[f'gamma_{i}'] = dgamma
+            assert grads[f'gamma_{i}'].shape == self.params[f'gamma_{i}'].shape,\
+                   f"{grads[f'gamma_{i}'].shape=} | {self.params[f'gamma_{i}'].shape=}"
+            assert grads[f'beta_{i}'].shape == self.params[f'beta_{i}'].shape,\
+                   f"{grads[f'beta_{i}'].shape=} | {self.params[f'beta_{i}'].shape=}"
         
         dL, dw, db = affine_backward(dL, cache.pop())
-        grads[f'W{i}'] = dw
+        grads[f'W{i}'] = dw.T + reg*self.params[f'W{i}']
         grads[f'b{i}'] = db
-
+        assert grads[f'W{i}'].shape == self.params[f'W{i}'].shape, f"{grads[f'W{i}'].shape=} | {self.params[f'W{i}'].shape=}"
+        assert grads[f'b{i}'].shape == self.params[f'b{i}'].shape, f"{grads[f'b{i}'].shape=} | {self.params[f'b{i}'].shape=}"
+        reg_loss += reg*0.5*(np.linalg.norm(self.params[f'W{i}'], ord='fro')**2)
+                             
+    loss += reg_loss
+    
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #

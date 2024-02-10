@@ -47,7 +47,11 @@ class TwoLayerNet(object):
     #   dimensions of W2 should be (hidden_dims, num_classes)
     # ================================================================ #
 
-    pass
+    self.params['W1'] = weight_scale * np.random.randn(hidden_dims, input_dim)
+    self.params['b1'] = np.zeros(hidden_dims)
+    self.params['W2'] = weight_scale * np.random.randn(num_classes, hidden_dims)
+    self.params['b2'] = np.zeros(num_classes)
+    self.params['dropout'] = dropout
 
     # ================================================================ #
     # END YOUR CODE HERE
@@ -80,15 +84,22 @@ class TwoLayerNet(object):
     #   the class scores as the variable 'scores'.  Be sure to use the layers
     #   you prior implemented.
     # ================================================================ #    
+    W1, b1 = self.params['W1'], self.params['b1']
+    W2, b2 = self.params['W2'], self.params['b2']
+    reg = self.reg
     
-    pass
+    h1, cache_h1 = affine_relu_forward(X, W1, b1)
+    z2, cache_z2 = affine_forward(h1, W2, b2)
+    scores = z2
+#     print(f"{scores=}")
+    
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #
     
     # If y is None then we are in test mode so just return scores
     if y is None:
-      return scores
+        return scores
     
     loss, grads = 0, {}
     # ================================================================ #
@@ -104,14 +115,28 @@ class TwoLayerNet(object):
     #   match our implementation.
     #
     #   And be sure to use the layers you prior implemented.
-    # ================================================================ #    
+    # ================================================================ #
+#     loss, dL = softmax_loss(np.reshape(X, (len(X),-1)), y)
+    loss, dL = softmax_loss(scores, y)
+    dh1, dw2, db2 = affine_backward(dL, cache_z2)
+    dx, dw1, db1 = affine_relu_backward(dh1, cache_h1)
+#     print(f"{loss=}")
     
-    pass
+    reg_loss = reg*0.5*(np.linalg.norm(W1, ord='fro')**2 + np.linalg.norm(W2, ord='fro')**2)
+#     print(f"{reg_loss=}")
+    loss += reg_loss
+#     print(f"{loss=}")
+    dw1 += reg*W1
+    dw2 += reg*W2
+    
+    grads['W1'] = dw1
+    grads['b1'] = db1
+    grads['W2'] = dw2
+    grads['b2'] = db2
 
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #
-    
     return loss, grads
 
 

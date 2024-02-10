@@ -192,7 +192,10 @@ class TwoLayerNet(object):
       # YOUR CODE HERE:
       #   Create a minibatch by sampling batch_size samples randomly.
       # ================================================================ #
-      pass
+      batch_size = min(batch_size, num_train)
+      idxs = np.random.choice(np.arange(num_train), size=batch_size, replace=False)
+      X_batch = X[idxs]
+      y_batch = y[idxs]
 
       # ================================================================ #
       # END YOUR CODE HERE
@@ -208,7 +211,10 @@ class TwoLayerNet(object):
       #   all parameters (i.e., W1, W2, b1, and b2).
       # ================================================================ #
 
-      pass
+      self.params["W1"] -= learning_rate*grads["W1"]
+      self.params["W2"] -= learning_rate*grads["W2"]
+      self.params["b1"] -= learning_rate*grads["b1"]
+      self.params["b2"] -= learning_rate*grads["b2"]
 
       # ================================================================ #
       # END YOUR CODE HERE
@@ -255,8 +261,14 @@ class TwoLayerNet(object):
     # YOUR CODE HERE:
     #   Predict the class given the input data.
     # ================================================================ #
-    pass
-
+    W1, b1 = self.params['W1'], self.params['b1']
+    W2, b2 = self.params['W2'], self.params['b2']
+    N, D = X.shape   
+ 
+    z1 = W1@(X.T) + b1[:,np.newaxis] # (H x D) x (D x N) = (H x N)
+    h1 = (z1 >= 0)*z1 # ReLU
+    z2 = W2@h1 + b2[:,np.newaxis]  # (C x H) x (H x N) = (C x N)
+    y_pred = np.argmax(z2.T, axis=1)
 
     # ================================================================ #
     # END YOUR CODE HERE

@@ -282,16 +282,10 @@ class FullyConnectedNet(object):
         
         state, cache_ = relu_forward(state)
         cache.append(cache_)
-
-#         if self.use_dropout:
-#             if mode == 'test':
-#                 state *= (1-self.dropout_param['p'])
-#             else:
-#                 M = np.random.rand((state.shape[1])) < self.dropout_param['p']
-#                 state *= M
-#                 cache.append(M)
-#             assert len(state) == N
-
+        
+        if self.use_dropout:
+            state, cache_ = dropout_forward(state, self.dropout_param)
+            cache.append(cache_)
     
     L = self.num_layers
     state, cache_ = affine_forward(state, self.params[f'W{L}'].T, self.params[f'b{L}'])
@@ -323,12 +317,8 @@ class FullyConnectedNet(object):
     reg_loss = reg*0.5*(np.linalg.norm(self.params[f'W{L}'], ord='fro')**2)
     
     for i in range(self.num_layers-1, 0, -1):
-#         if self.use_dropout:
-#             if mode == 'test':
-#                 dL *= (1-self.dropout_param['p'])
-#             else:
-#                 M = cache.pop()
-#                 dL *= M
+        if self.use_dropout:
+            dL = dropout_backward(dL, cache.pop())
 
         dL = relu_backward(dL, cache.pop())
         

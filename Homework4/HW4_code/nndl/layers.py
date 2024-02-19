@@ -192,36 +192,40 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     out, cache = None, None
     if mode == 'train':
 
-    # ================================================================ #
-    # YOUR CODE HERE:
-    #   A few steps here:
-    #     (1) Calculate the running mean and variance of the minibatch.
-    #     (2) Normalize the activations with the sample mean and variance.
-    #     (3) Scale and shift the normalized activations.  Store this
-    #         as the variable 'out'
-    #     (4) Store any variables you may need for the backward pass in
-    #         the 'cache' variable.
-    # ================================================================ #
-        pass
-
-
-    # ================================================================ #
-    # END YOUR CODE HERE
-    # ================================================================ #
+        # ================================================================ #
+        # YOUR CODE HERE:
+        #   A few steps here:
+        #     (1) Calculate the running mean and variance of the minibatch.
+        #     (2) Normalize the activations with the sample mean and variance.
+        #     (3) Scale and shift the normalized activations.  Store this
+        #         as the variable 'out'
+        #     (4) Store any variables you may need for the backward pass in
+        #         the 'cache' variable.
+        # ================================================================ #
+        mu = x.mean(axis=0)
+        var = x.var(axis=0)
+        running_mean = momentum*running_mean + (1 - momentum)*mu
+        running_var = momentum*running_var + (1 - momentum)*var
+        x_hat = (x - mu)/np.sqrt(var+eps)
+        cache = (mu, var, x_hat, x, gamma, eps)
+        out = gamma*x_hat + beta
+        # ================================================================ #
+        # END YOUR CODE HERE
+        # ================================================================ #
 
     elif mode == 'test':
 
-    # ================================================================ #
-    # YOUR CODE HERE:
-    #   Calculate the testing time normalized activation.  Normalize using
-    #   the running mean and variance, and then scale and shift appropriately.
-    #   Store the output as 'out'.
-    # ================================================================ #
-        pass
-
-    # ================================================================ #
-    # END YOUR CODE HERE
-    # ================================================================ #
+        # ================================================================ #
+        # YOUR CODE HERE:
+        #   Calculate the testing time normalized activation.  Normalize using
+        #   the running mean and variance, and then scale and shift appropriately.
+        #   Store the output as 'out'.
+        # ================================================================ #
+        x_hat = (x - running_mean)/np.sqrt(running_var+eps)
+        out = gamma*x_hat + beta
+        # ================================================================ #
+        # END YOUR CODE HERE
+        # ================================================================ #
 
     else:
         raise ValueError('Invalid forward batchnorm mode "%s"' % mode)
@@ -255,7 +259,18 @@ def batchnorm_backward(dout, cache):
     # YOUR CODE HERE:
     #   Implement the batchnorm backward pass, calculating dx, dgamma, and dbeta.
     # ================================================================ #
-
+    mu, var, x_hat, x, gamma, eps = cache
+    inv_sqr = 1.0/np.sqrt(var+eps)
+    inv_var = 1.0/(var+eps)
+    m = len(x)
+    
+    dbeta = dout.sum(axis=0)
+    dgamma = (dout*x_hat).sum(axis=0)
+    dx_hat = dout*gamma
+    dmu = -inv_sqr*dx_hat.sum(axis=0)
+    de = -0.5*(inv_sqr**3)*(x - mu)*dx_hat
+    dvar = de.sum(axis=0)
+    dx = inv_sqr*dx_hat + (2.0*(x-mu)/m)*dvar + dmu/m
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #

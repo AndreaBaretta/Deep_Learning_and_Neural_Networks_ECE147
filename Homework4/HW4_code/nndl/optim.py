@@ -150,7 +150,6 @@ def rmsprop(w, dw, config=None):
     assert config['a'].size == w.size
     next_w = w - dw*(config['learning_rate']/(np.sqrt(config['a']) + config['epsilon']))
     assert next_w.size == w.size
-    print()
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #
@@ -190,7 +189,12 @@ def adam(w, dw, config=None):
     #   moment gradients, and in config['v'] the moving average of the
     #   first moments.  Finally, store in config['t'] the increasing time.
     # ================================================================ #
-
+    config['t'] += 1
+    config['v'] = config['beta1']*config['v'] + (1 - config['beta1'])*dw
+    config['a'] = config['beta2']*config['a'] + (1 - config['beta2'])*dw*dw
+    v_hat = config['v']/(1 - config['beta1']**config['t'])
+    a_hat = config['a']/(1 - config['beta2']**config['t'])
+    next_w = w - config['learning_rate']*v_hat/(np.sqrt(a_hat) + config['epsilon'])
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #

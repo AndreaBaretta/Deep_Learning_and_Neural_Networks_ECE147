@@ -178,9 +178,9 @@ class FullyConnectedNet(object):
 
     for i, dims in enumerate(hidden_dims):
         if self.use_batchnorm:
-            prev_size = (input_dim if i == 0 else hidden_dims[i-1])
-            self.params[f'gamma_{i+1}'] = np.ones(prev_size)
-            self.params[f'beta_{i+1}'] = np.zeros(prev_size)
+#             prev_size = (input_dim if i == 0 else hidden_dims[i-1])
+            self.params[f'gamma_{i+1}'] = np.ones(dims)
+            self.params[f'beta_{i+1}'] = np.zeros(dims)
         if i == 0:
             self.params['W1'] = weight_scale * np.random.randn(hidden_dims[i], input_dim)
             self.params['b1'] = np.zeros(hidden_dims[i])
@@ -264,25 +264,24 @@ class FullyConnectedNet(object):
     reg = self.reg
     cache = []
     state = np.reshape(X, (len(X),-1))
-    N = len(X)
+    
     for i in range(1, self.num_layers):
-        assert len(state) == N
         # Assuming state: (N x D)
         state, cache_ = affine_forward(state, self.params[f'W{i}'].T, self.params[f'b{i}'])
         cache.append(cache_)
-        assert len(state) == N
         # Assuming state: (N x M)
-#         if self.use_batchnorm:
-#             mu = state.mean(axis=0)[:,np.newaxis]
-#             var = state.var(axis=0)[:,np.newaxis]
-#             x_hat = (state - mu)/np.sqrt(var+e)
-#             cache.append((mu, var, x_hat, state))
-#             state = self.params[f'gamma_{i}']*x_hat + self.params[f'beta_{i}']
-#             assert len(state) == N
+        if self.use_batchnorm:
+
+            state, cache_ = batchnorm_forward(
+                state,
+                self.params[f'gamma_{i}'],
+                self.params[f'beta_{i}'],
+                self.bn_params[i-1]
+            )
+            cache.append(cache_)
         
         state, cache_ = relu_forward(state)
         cache.append(cache_)
-        assert len(state) == N
 
 #         if self.use_dropout:
 #             if mode == 'test':
@@ -333,21 +332,10 @@ class FullyConnectedNet(object):
 
         dL = relu_backward(dL, cache.pop())
         
-        # Assuming dL: (N x D) - Each row is a feature, each column an observation. Sum along observations
-#         if self.use_batchnorm:
-#             mu, var, x_hat, x = cache.pop()
-#             dbeta = dL.sum(axis=0)
-#             dgamma = (dL*x_hat).sum(x=0)
-#             dx_hat = dL*self.params[f'gamma_{i}']
-#             dmu = (-1/(var+e))*dx_hat.sum(axis=0)
-#             dvar = (-0.5/((var+e)**(3.0/2.0))) * ((x - mu)*dx_hat).sum(axis=0)
-#             dL = 1/((var+e)**(1.0/2.0))*dx_hat + 2*((x - mu)/len(m))*dvar + (1.0/len(x))*dmu
-#             grads[f'beta_{i}'] = dbeta
-#             grads[f'gamma_{i}'] = dgamma
-#             assert grads[f'gamma_{i}'].shape == self.params[f'gamma_{i}'].shape,\
-#                    f"{grads[f'gamma_{i}'].shape=} | {self.params[f'gamma_{i}'].shape=}"
-#             assert grads[f'beta_{i}'].shape == self.params[f'beta_{i}'].shape,\
-#                    f"{grads[f'beta_{i}'].shape=} | {self.params[f'beta_{i}'].shape=}"
+        if self.use_batchnorm:
+            dL, dgamma, dbeta = batchnorm_backward(dL, cache.pop())
+            grads[f'beta_{i}'] = dbeta
+            grads[f'gamma_{i}'] = dgamma
         
         dL, dw, db = affine_backward(dL, cache.pop())
         grads[f'W{i}'] = dw.T + reg*self.params[f'W{i}']

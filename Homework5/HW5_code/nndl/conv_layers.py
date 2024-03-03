@@ -70,7 +70,7 @@ def conv_forward_naive(x, w, b, conv_param):
     # ================================================================ #
     
     a = np.pad(x, ((0,0),(0,0),(pad,pad),(pad,pad)))
-    num_kernels = w.shape[1]
+    num_kernels = w.shape[0]
     kernel_size_h = w.shape[2]
     kernel_size_w = w.shape[3]
     batch_size, channels, height, width = a.shape
@@ -88,7 +88,12 @@ def conv_forward_naive(x, w, b, conv_param):
                 conv += conv2d(im[c], kernel[c], stride, 0)
             out[n, f, :, :] = conv+bias
                 
-
+#     print("Input sizes:")
+#     print(f"{x.shape=}")
+#     print(f"{w.shape=}")
+#     print(f"{b.shape=}")
+#     print(f"{out.shape=}")
+    
     # ================================================================ #
     # END YOUR CODE HERE
     # ================================================================ #
@@ -130,21 +135,28 @@ def conv_backward_naive(dout, cache):
     batch_size, channels, height, width = x.shape
     
     dx = np.zeros_like(x)
+    dw = np.zeros_like(w)
     for n,im in enumerate(x):
-        for c in range(0, channels):
-            for f,kernel in enumerate(w):
+        for f,kernel in enumerate(w):
+            for c in range(0, channels):
                 dx_ = conv2d(
                     np.pad(
-                        dilate(dout[f], stride, stride),
-                        ((kernel_size_h,kernel_size_h),
-                        (kernel_size_w,kernel_size_w))
+                        dilate(dout[n, f], stride-1, stride-1),
+                        ((kernel_size_h-1,kernel_size_h-1),
+                        (kernel_size_w-1,kernel_size_w-1))
                     ),
                     np.flip(kernel[c])
                 )
-                dx[n, c, :, :] += dx_
+                dx[n, c, :, :] += dx_[pad:pad+height, pad:pad+width]
+                
+                dw_ = conv2d(
+                    np.pad(x[n, c], ((pad,pad),(pad,pad))),
+                    dilate(dout[n, f], stride-1, stride-1)
+                )
+                dw[f, c, :, :] += dw_
     
-    dw = np.zeros_like(w)
-    db = np.zeros_like(b)
+    
+    db = np.sum(dout, axis=(0,2,3))
     
     # ================================================================ #
     # END YOUR CODE HERE

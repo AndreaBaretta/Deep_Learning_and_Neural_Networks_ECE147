@@ -186,8 +186,18 @@ def max_pool_forward_naive(x, pool_param):
     # YOUR CODE HERE:
     #   Implement the max pooling forward pass.
     # ================================================================ #
-
-    pass
+    
+    N, C, H, W = x.shape
+    R = pool_param['pool_height']
+    S = pool_param['pool_width']
+    stride = pool_param['stride']
+    
+    out = np.zeros((N, C, int((H-R)/stride + 1), int((W-S)/stride + 1)))
+    for n,im in enumerate(x):
+        for c,channel in enumerate(im):
+            for i_,i in enumerate(range(0, H-R+1, stride)):
+                for j_,j in enumerate(range(0, W-S+1, stride)):
+                    out[n, c, i_, j_] = np.max(channel[i:i+R, j:j+S])
 
     # ================================================================ #
     # END YOUR CODE HERE
@@ -215,7 +225,21 @@ def max_pool_backward_naive(dout, cache):
     #   Implement the max pooling backward pass.
     # ================================================================ #
 
-    pass
+    N, C, H, W = x.shape
+    R = pool_param['pool_height']
+    S = pool_param['pool_width']
+    stride = pool_param['stride']
+    
+    out = np.zeros((N, C, int((H-R)/stride + 1), int((W-S)/stride + 1)))
+    dx = np.zeros_like(x)
+    
+    for n,im in enumerate(x):
+        for c,channel in enumerate(im):
+            for i_,i in enumerate(range(0, H-R+1, stride)):
+                for j_,j in enumerate(range(0, W-S+1, stride)):
+                    mask = np.ones_like(channel)*(-np.inf)
+                    mask[i:i+R, j:j+S] = channel[i:i+R, j:j+S]
+                    dx[n, c, *np.unravel_index(np.argmax(mask), mask.shape)] += dout[n, c, i_, j_]
 
     # ================================================================ #
     # END YOUR CODE HERE
